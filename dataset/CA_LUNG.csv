@@ -1,0 +1,17 @@
+﻿city,smoker,cancer,count
+Beijing,Yes,Yes,126
+Beijing,Yes,No,100
+Beijing,No,Yes,35
+Beijing,No,No,61
+Shanghai,Yes,Yes,908
+Shanghai,Yes,No,688
+Shanghai,No,Yes,497
+Shanghai,No,No,807
+Nanjing,Yes,Yes,235
+Nanjing,Yes,No,172
+Nanjing,No,Yes,58
+Nanjing,No,No,121
+Zhengzho,Yes,Yes,182
+Zhengzho,Yes,No,156
+Zhengzho,No,Yes,72
+Zhengzho,No,No,98
