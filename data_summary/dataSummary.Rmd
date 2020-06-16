@@ -1,0 +1,252 @@
+# 데이터 요약
+
+- 이윤석
+- 6 16, 2020
+
+## 대푯값(central tendency)
+
+### 산술평균(arthmetic mean)
+
+어느 날 오전에 전신마취를 예정한 채로 수술실로 입장한 성인 열다섯 명의 평균혈압을 측정하여 다음과 같이 기록하였다.
+
+```{r prompt = TRUE}
+mbp <- c(98, 89, 94, 84, 99, 84, 79, 66, 93, 80, 85, 82, 73, 80, 89)
+attributes(mbp) <- list(units = "mm Hg")
+mean(mbp)
+```
+
+수식 없이 "평균"이라고 말할 때 흔히 "산술평균"을 뜻하는 경우가 많다. 간격척도(interval scale)로 측정된 데이터가 아니라면 산술평균은 의미를 가지기 어렵다.
+
+### 중간값(중위수; median)
+
+```{r prompt = TRUE}
+median(mbp)
+```
+
+치우친 값을 가지고 있는 데이터의 대푯값은 평균보다는 중간값이 데이터의 중심을 더 잘 반영한다. 정의 그대로 순서대로 나열했을 때 중간에 위치한 값을 고른다.
+
+데이터의 길이가 짝수라면 중간의 바로 앞뒤 값의 산술평균을 취한다. 함수 `median`으로 쉽게 찾을 수 있지만 개념적으로 다음과 같다.
+
+```{r prompt = TRUE}
+le <- length(mbp)
+mid <- round(le %/% 2)
+mid <- c(mid, mid + ifelse( le %% 2 == 0, 
+	1, 			# even size
+	0 ) ) 		# odd size
+sum( sort(mbp)[mid] ) / 2
+```
+
+### 최빈수(mode) 
+
+```{r prompt = TRUE}
+sort( table(mbp), decreasing = TRUE )
+```
+
+간격척도(interval scale)로 측정된 데이터에서는 최빈수로 대푯값을 묘사하는 것이 적절하지 않다. 범위를 설정한 후에 도수를(frequency) 측정하는 방법이 대안이다. 
+
+```{r prompt = TRUE}
+# It is arbitrary how to adjust intervals.
+intv <- ifelse(mbp <= 80, "<=80",
+	 ifelse(mbp <= 90, "81-90", "90<") )
+intv <- factor(intv, levels = c("<=80", "81-90", "90<")	)
+table(intv)
+```
+
+
+
+
+
+
+## 불확정도(uncertainty)
+
+대푯값으로 데이터의 중심성향을 나타낸다면 불확정도는 대푯값으로 설명할 수 없는 부분을 수치로 묘사한다. 불확정도는 모든 통계적 추리행위의 출발점에 있다. 
+
+### 범위(range)
+
+데이터 내에서 최솟값과 최댓값을 범위로 부른다. 대푯값으로 설명할 수 없는 부분의 극한을 나타내는 편리한 값이지만 외톨이값이 있는 경우에는 (외톨이값의 위치에 따라) 불확정도를 과대(과소)평가하는 경향이 생긴다.
+
+```{r prompt = TRUE}
+range(mbp)
+c( min(mbp), max(mbp) )
+```
+
+### 제곱합(sum of squares; ss)
+
+주어진 데이터의 불확정도를 묘사하기 위해서 제곱합을 맨 앞에 기록하는 일은 드물지만 여러 추리통계의 근간을 이루기 때문에 이해해 두면 편리하다.
+
+정의 그대로 제곱합은 모든 관찰값과 평균과의 차이의 제곱의 합이다($ss = \sum {(x_i - \bar{x}_i)^2}$). 차이의 제곱을 취함으로서 양의 차이와 음의 차이가 서로 상쇄되는 현상을 방지하고 평균과 차이가 큰 관찰값이 많을수록 그 영향력을 높게 책정할 수 있는 장점이 있다.
+
+```{r prompt = TRUE}
+( ss <- sum( ( mbp - mean (mbp) ) ^ 2 ) )
+```
+
+
+
+### 분산(variance)
+
+위에서 계산한 제곱합을 모집단의 `표본수 - 1`로 나누면 데이터의 분산($s^2$)을 얻을 수 있고 내장함수 `var`를 써도 된다.
+
+```{r prompt = TRUE}
+ss / ( length(mbp) - 1 ) 
+var( mbp )
+```
+
+### 표준편차(standard deviation; sd)
+
+분산은 데이터의 불확정성을 나타내는 좋은 지표이지만 (차이의 제곱을 취했으므로) 데이터의 측정 단위와 일치하지 않는 불편을 초래한다. 따라서 분산에 제곱근을 취한 통계량인 표준편차가 데이터의 불확정성을 나타내는 대표 지표가 된다. 내장함수로는 `sd`를 쓸 수 있다.
+
+```{r prompt = TRUE}
+sqrt( ss / ( length(mbp) - 1 ) )
+sd( mbp )
+```
+
+정규분포에 근사하는 데이터의 경우에 평균으로부터 표준편차의 1배 위아래 범위에 데이터의 68퍼센트가 들어 있고 2배 위아래에는 데이터의 95퍼센트가 들어 있다는 반쯤의 명제가 있다. 이 명제는 정확하지는 않지만 널리 통용되므로, 엄밀한 과학 기술의 맥락이 아니라면 - 예, 과학논문 -  자유롭게 사용해도 무방하다.
+
+
+### 평균의 표준오차(standard errors of mean; SEM; SE)
+
+우리의 평균동맥압 측정의 목표가 수술실로 입장하는 전신마취 예정환자들의 마취 전 혈압을 파악하는 것이었다면 혈압은 여러 번에 걸쳐서 측정되어야 모집단에 가까워질 것이다. 위에서 다루고 있는 15명의 환자의 평균동맥압의 평균이 85 mm Hg이지만 다른 날에 측정했을 때 86이고 또 다른 날에는 79이기도 할 때 어느 날의 평균이 전체 평균을 대변하는지 알 수 없다. 날짜를 구분하지 않고 사흘 동안의 측정을 뭉뚱그려 45명을 하나의 측정으로 간주하고 계산하면 평균은 83.3 mm Hg로 계산된다. 만약 측정의 반복이 반복될 때 얻어지는 평균을 대평균이라는 용어로 부르고 환자의 숫자가 증가하면 모집단을 대표할 가능성이 높아질 것이다.
+
+따라서, 우리가 측정한 데이터의 평균은 모집단 평균의 추정값일 뿐으로 모집단의 평균에 얼마나 가까운지를 추정한 통계량이 SEM이다. 자주 줄여서 SE로 부른다. SE는 데이터의 분산(SD)을 표본수로 나눈 값에 제곱근을 취한 꼴로 얻는다($\sqrt{var/n}$).
+
+```{r prompt = TRUE}
+sqrt( var(mbp) / length(mbp) )
+```
+
+### 평균의 신뢰구간(confidence intervals of the mean; CI)
+
+측정된 데이터의 평균으로부터 SE의 일정 배율만큼 곱한 값을 더하고 뺀 범위이다. 정의상 68% CI는 평균으로부터 1배의 SE 위아래 값을 포함하고 95% CI는 2배의 SE 위아래 값을(정확히는 $1.96 \times SE$) 포함하게 되어 있다. 95% CI는 이렇게 구한다.
+
+```{r prompt = TRUE}
+c_limit <- 1.96 * sqrt( var(mbp) / length(mbp) )
+( ci <- c( mean (mbp) - c_limit, mean (mbp) + c_limit) )
+```
+
+위에서 1.96는 정규분포의 오른쪽 꼬리의 2.5퍼센트를 배제한 분위계수 즉, 97.5분위계수 값으로서($1 - 0.05/2$) R의 내장함수로는 다음처럼 구할 수 있다.
+
+```{r prompt = TRUE}
+qnorm(0.975)
+```
+
+만약 99% CI를 계산하고자 하면 2.58을 곱하면 된다.
+
+```{r prompt = TRUE}
+qnorm(1 - 0.01/2)
+```
+
+정규분포를 전제로 하여 추정한 신뢰구간은 다른 특정 분포를 전제하여 추정한 신뢰구간과 크고작은 폭의 차이를 가진다. 위 15명의 혈압 데이터에서 t분포를 근간으로 한 95% CI는(자유도 df = n - 1) 위에서 추정한 값과 조금 다르다. 어떤 분포를 택할지는 맥락에 따라 합리적으로 선택하되 많은 상황에서 정규분포의 분위계수를 써서 추정한 CI가 통용된다.
+
+```{r prompt = TRUE}
+t.test (mbp)$conf.int
+# re-calculation with t-quantile
+c_limit <- qt(1 - 0.05/2, df = 15 - 1) * sqrt( var(mbp) / length(mbp) )
+( ci <- c( mean (mbp) - c_limit, mean (mbp) + c_limit) )
+```
+
+
+
+
+## 도수(frequency)로 측정된 자료
+
+
+근래에는 절대연령을 가린 채 단지 범위의 연령만 제공하는 의료빅데이터가 늘고 있어서 간격척도로 측정되었을 원자료에 대해서도 도수로 자료를 묘사하는 소개했었지만, 처음부터 도수의 형태로 측정되었다면 도수표가(frequency table) 데이터를 요약하는 간단하면서 명확한 방법이다.
+
+저번의 flights 데이터에서 월별 출발공항별 집계를 구할 때 사용한 방법이다.
+
+```{r prompt = TRUE}
+with(flights, table(month, origin))
+```
+
+이륙지연이 간격척도(분)로 측정되어 있으므로 항공사별 평균과 표준편차를 비교하는 것이 자연스럽지만 이륙지연 여부로 도수를 집계하는 것도 데이터를 표현하는 편리한 방식이다.
+
+```{r prompt = TRUE}
+t <- with(flights, table(carrier, dep_delay > 0))
+t[order(t[, 2], decreasing = TRUE),]
+```
+
+위에서는 집계 후 빈도순으로 정렬까지 했다. 
+비행의 총 횟수가 많으면 지연의 횟수도 앞설 수 있으므로 백분율로 구해서 다시 나열했다.
+
+```{r prompt = TRUE}
+t <- cbind(t, 
+	apply(t, 1,  
+		function(x) 
+			round (x[2] / sum(x) * 100, 1) 
+		) # apply
+	) # cbind
+colnames(t) <- c("no delay", "delay", "delay (%)")
+t[order(t[, "delay (%)"], decreasing = TRUE),]	
+```
+
+
+
+## 함수 summary
+
+R은 불특정 자료형을 가진 벡터(들)에 대한 요약값을 한꺼번에 계산해 주는 summary 함수를 내장하고 있다. 가령 세 번째 수업에서 다루었던 Orthodont 데이터에 대해서 summary를 명령하면 이렇게 나온다.
+
+```{r prompt = TRUE}
+data(Orthodont, package = "nlme")
+summary(Orthodont)
+```
+
+즉, 요약해야 할 대상이 간격척도라면 최소, 최댓값, 중간값, 산술평균과 제1, 제3사분위수가 계산되고 명칭척도라면(여기서는 피험자번호와 성별) 도수로 집계된다. 개별 변수에 대해서도 시행할 수 있다.
+
+```{r prompt = TRUE}
+summary(Orthodont$distance)
+class(summary(Orthodont$distance))
+```
+
+출력되는 값은 table 형식이므로 tapply에서 작동하도록 하려면 단일벡터로 바꾸면 된다. (다만 순서의 의미는 프로그래머가 알고 있어야 한다.)
+
+```{r prompt = TRUE}
+with(Orthodont, tapply(distance, age, function(x) as.vector(summary(x)))) #
+```
+
+또는 설명을 부착하는 일은 지루하기는 해도 결과를 빠르게 읽어 내는 데 실수를 줄이는 방편이 될 수 있다.
+
+```{r prompt = TRUE}
+with(Orthodont, tapply(distance, age, 
+	function(x) {
+		v <- as.vector( s <- summary( x ) )
+		names( v ) <- names( s )
+		return ( v )
+		} # closure of function 
+		) # closure of tapply 
+	) # closue of with
+```
+
+
+## R 내장 데이터들
+
+R의 장점 중 하나는 셀 수 없이 많은 데이터를 연구용, 훈련용으로 내장하고 있다는 점이다. 어디에 무엇이 있는지 알기 어렵다는 점이 장애물이지만 구글 검색창에 `R built-in dataset` 또는 `Useful dataset embedded in R` 등으로 검색하면 어떤 방식으로든 안내 받을 수 있다. 다음은 무작위 목록이다. 각각에 대한 상세한 설명은 헬프 페이지를 이용하면 좋다. 가령 `?mtcars` 또는 `??mtcars`
+
+다음은 극히 일부분으로서 이 자리에서 불러 들여서 간단히 테스트 해 보라.
+
+
+### mtcars
+
+32종의 자동차의 기종별 제원과 도로테스트 기록을 담은 목록이다. 간격척도, 명칭척도가 혼재한 자료이다. 함수 `data`를 필요로 하지 않고 처음부터 작업공간에 들어 있다.
+
+```{r prompt = TRUE}
+str(mtcars)
+```
+
+### ToothGrowth
+
+실험쥐의 치아성장을 영양보조제(비타민씨 또는 오렌지주스)와 용량에 따라 조사한 균형 잡힌 전향무작위실험자료이다. 이것도 작업공간에 탑재되어 있다.
+
+```{r prompt = TRUE}
+str(ToothGrowth)
+```
+
+### iris
+
+붓꽃의 품종별 식별 자료로서 다변량분석을 위해서 자주 인용된다.
+
+```{r prompt = TRUE}
+str(iris)
+```
+
+---
+(끝)
+
